@@ -1,6 +1,12 @@
 var gracenode = require('GraceNode');
 var logger = gracenode.log.create('mongodb-collection');
 
+var updateOptions = {
+	safe: true,
+	multi: true,
+	upsert: false
+};
+
 module.exports = Collection;
 
 function Collection(dbName, name, collection) {
@@ -119,17 +125,109 @@ values: [ {object to be sotred}, {object to be stored}, {...} ]
 */
 Collection.prototype.insert = function (values, cb) {
 	
-	logger.info('inserting to mongodb:', this._name, values);
+	logger.verbose('inserting to mongodb:', this._name, values);
 	
 	var that = this;
 
-	this._collection.insert(values, function (error) {
+	this._collection.insert(values, function (error, res) {
 		if (error) {
 			return cb(error);
 		}
 		logger.info('inserted to mongodb:', that._name, values);
-		cb();
+		cb(null, res);
 	});
+};
+
+Collection.prototype.update = function (conditions, update, cb) {
+	
+	logger.verbose('updating document(s) in mongodb:', this._name, conditions, update);
+
+	var that = this;
+
+	this._collection.update(conditions, update, updateOptions, function (error, res) {
+		if (error) {
+			return cb(error);
+		}
+		logger.info('updated document(s) in mongodb:', that._name, conditions, update);
+		cb(null, res);
+	});
+};
+
+// multi: <boolean> false by default
+Collection.prototype.upsert = function (conditions, update, multi, cb) {
+	logger.verbose('upserting document(s) in mongodb:', this._name, conditions, update);
+	var that = this;
+	var options = {
+		safe: true,
+		multi: multi || false,
+		upsert: true
+	};
+	this._collection.update(conditions, update, options, function (error, res) {
+		if (error) {
+			return cb(error);
+		}
+		logger.info('upserted document(s) in mongodb:', that._name, conditions, update, options);
+		cb(null, res);
+	});
+};
+
+// incValue must NOT be zero or negative
+// threshhold is the maximum value allowed and it must be bigger than incValue
+Collection.prototype.increment = function (conditions, propName, incValue, threshhold, cb) {
+	if (!incValue) {
+		return cb(new Error('invalidIncrementvalue'));
+	}
+	if (incValue > threshhold) {
+		return cb(new Error('incrementValueExceedsMax'));
+	}
+	logger.verbose('incrementing a property of document(s) in mongodb:', this._name, conditions, incValue, threshhold);
+	var that = this;
+	var update = { $inc: {} };
+	update.$inc[propName] = incValue;
+	conditions[propName] = {
+		$lte: threshhold - incValue
+	};
+	this._collection.update(conditions, update, function (error, res) {
+		if (error) {
+			return cb(error);
+		}
+		if (!res) {
+			return cb(new Error('blockedExceedMaxIncrement'));
+		}
+		logger.info('incremented a property of document(s) in mongodb:', that._name, conditions, incValue, threshhold);
+		cb(null, res);
+	});
+};
+
+// decrementValue must NOT be zero or negative
+// value = value - decrementValue where value >= decrementValue
+// this operation will prevent the target value to go below 0
+Collection.prototype.decrement = function (conditions, propName, decrementValue, cb) {
+	
+	if (!decrementValue) {
+		return cb(new Error('invalidDecrementValue'));
+	}
+
+	logger.verbose('decrementing a property of document(s) in mongodb:', this._name, conditions, decrementValue);
+
+	var that = this;
+	var update = { $inc: {} };
+	update.$inc[propName] = -1 * decrementValue;
+	conditions[propName] = {
+		$gte: decrementValue
+	};
+
+	this._collection.update(conditions, update, function (error, res) {
+		if (error) {
+			return cb(error);
+		}
+		if (!res) {
+			return cb(new Error('blockedNegativeDecrement'));
+		}
+		logger.info('decremented a property of document(s) in mongodb:', that._name, conditions, decrementValue);
+		cb(null, res);
+	});
+
 };
 
 /*
@@ -140,7 +238,7 @@ values: { keyToMatch: { '$in': [keys to match] } }
 */
 Collection.prototype.delete = function (values, cb) {
 	
-	logger.info('deleting from mongodb:', this._name, values);
+	logger.verbose('deleting from mongodb:', this._name, values);
 
 	var that = this;
 
@@ -157,22 +255,22 @@ Collection.prototype.delete = function (values, cb) {
 // you can NOT save moe than one document at a time
 Collection.prototype.save = function (values, cb) {
 
-	logger.info('saving to mongodb:', this._name, values);
+	logger.verbose('saving to mongodb:', this._name, values);
 
 	var that = this;
 
-	this._collection.save(values, function (error) {
+	this._collection.save(values, function (error, res) {
 		if (error) {
 			return cb(error);
 		}
 		logger.info('saved to mongodb:', that._name, values);
-		cb();
+		cb(null, res);
 	});
 };
 
 Collection.prototype.findAndModify = function (query, sort, update, options, cb) {
 	
-	logger.info('find and modifying mongodb:', this._name, query, sort, update, options);
+	logger.verbose('find and modifying mongodb:', this._name, query, sort, update, options);
 
 	var that = this;
 
@@ -183,6 +281,18 @@ Collection.prototype.findAndModify = function (query, sort, update, options, cb)
 
 		logger.info('find and modified mongodb:', that._name, query, sort, update, options);
 		cb(null, result);	
+	});
+};
+
+Collection.prototype.ensureIndex = function (indexes, options, cb) {
+	logger.verbose('adding index(es) to a document in mongodb:', this._name, indexes, options);
+	var that = this;
+	this._collection.ensureIndex(indexes, options, function (error, res) {
+		if (error) {
+			return cb(error);
+		}
+		logger.info('added index(es) to a document in mongodb:', that._name, indexes, options);
+		cb(null, res);
 	});
 };
 

@@ -105,6 +105,18 @@ gracenode.setup(function(error) {
 });
 ```
 
+###.isMaster()
+Returns a boolean. true is given if the process is master (available ONLY in cluster mode)
+
+###.getProcessType()
+Returns an object that contains the type of process as a string and pid. (available ONLY in cluster mode)
+```
+var processType = gracenode.getProcessType();
+/*
+{ type: 'master', pid: 1240 } or { type: 'worker', pid: 36204 }
+*/
+```
+
 ###.exit(errorMessage [string*])
 Exits GraceNode and attempts to gracefully shutdown the process. You can give it an error message in case you want to stop the process due to an error.
 ```
@@ -188,10 +200,8 @@ Handles sessions and automatically expires them if they are not accessed within 
 Contains functions that make it easier to deal with crypography and password hashing.
 ###[MySQL](modules/mysql)
 A wrapper to handle MySQL connections without the hassle of maintaining your connection pool.
-###[Datacache](modules/datacache)
-Allows you to cache queries to MySQL and other requests.
-###[Asset](modules/asset)
-Asset management.
+###[Mongodb](modules/mongodb)
+A wrapper to handle Mongodb functions and connections.
 ###[Memcache] (modules/memcache)
 Memcache management.
 ### [Iap] (modules/iap)
@@ -217,7 +227,6 @@ Coin management.
     </Proxy>
 
     ProxyPreserveHost on
-    ProxyPass /asset ! # do not proxy this path
     ProxyPass / http://yourdomain.com:8000/ # proxy everything else to GraceNode
     ProxyPassReverse / yourdomain.com:8000/
 

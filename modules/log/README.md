@@ -24,6 +24,7 @@ var log = gracenode.log.create('nameToBeDisplayed');
 				"host": "<host name or ip address>",
 				"port"" "<port>"
 			},
+			"console": <boolean>,
 			"color": true or false,
 			"level": {
 				"verbose": <boolean>
@@ -40,10 +41,11 @@ var log = gracenode.log.create('nameToBeDisplayed');
 ##Events: *output*
 
 ```
-gracenode.log.on('output', function (address, level, message) {
+gracenode.log.on('output', function (address, name, level, messageObj) {
 	// address: IP address of the server
+	// name: the name that was set on gracenode.log.create()
 	// level: verbose, debug, info, warning, error, or fatal
-	// message: log data
+	// messageObj: { message, timestamp }
 });
 ```
 

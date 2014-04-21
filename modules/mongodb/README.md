@@ -82,9 +82,37 @@ function (error) {
 });
 ```
 
+> **ensureIndex**
+<pre>
+void ensureIndex(Object indexes, Object options, Function callback)
+</pre>
+
 > **insert**
 <pre>
 void insert(Object values, Function callback)
+</pre>
+
+> **update**
+(safe and multi are always true and upsert is false)
+<pre>
+void update(Object conditions, Object updates, Function callback)
+</pre>
+
+> **upsert**
+<pre>
+void upsert(Object conditions, Object updates, Boolean multi, Function callback)
+</pre>
+
+> **increment**
+(does NOT allow the target property to exceed maximum number given)
+<pre>
+void increment(Object conditions, String propertyName, Number incrementBy, Number maximumNumberAllowed, Function callback)
+</pre>
+
+> **decrement**
+(does NOT allow the target property to fall below 0)
+<pre>
+void decrement(Object conditions, String propertyName, Number decrementBy, Function callback)
 </pre>
 
 > **save**

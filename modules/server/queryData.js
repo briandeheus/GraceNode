@@ -1,4 +1,3 @@
-
 module.exports.createGetter = function (dataObj) {
 	var data = new Data(dataObj);
 	return data;
@@ -23,6 +22,14 @@ Data.prototype.get = function (key) {
 		res = JSON.parse(res);
 	} catch (error) {
 		// res is not a JSON
+	}
+	return res;
+};
+
+Data.prototype.getAll = function () {
+	var res = {};
+	for (var key in this._data) {
+		res[key] = this.get(key);
 	}
 	return res;
 };
